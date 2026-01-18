@@ -1,0 +1,229 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Personal Book Library</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;font-family:'Poppins',sans-serif;}
+    body{
+      min-height:100vh;
+      background:url('https://images.unsplash.com/photo-1524995997946-a1c2e315a42f') no-repeat center/cover;
+    }
+    .overlay{background:rgba(0,0,0,0.65);min-height:100vh;padding:20px;}
+    h1,h2,h3{color:#fff;text-align:center;margin-bottom:10px;}.box{
+  max-width:420px;
+  background:#fff;
+  margin:80px auto;
+  padding:25px;
+  border-radius:12px;
+  box-shadow:0 10px 25px rgba(0,0,0,0.3);
+  text-align:center;
+}
+
+input,select,button{
+  width:100%;
+  padding:10px;
+  margin:8px 0;
+  border-radius:6px;
+  border:1px solid #ccc;
+}
+
+button{background:#4f46e5;color:#fff;font-weight:600;cursor:pointer;}
+button:hover{background:#4338ca;}
+
+.secondary{background:#16a34a;}
+.link{color:#4f46e5;cursor:pointer;font-size:14px;margin-top:8px;display:block;}
+
+.app{display:none;max-width:1100px;margin:auto;}
+
+.header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  color:#fff;
+  margin-bottom:20px;
+}
+
+.logout{background:#dc2626;width:auto;padding:8px 14px;}
+
+.card{
+  background:#fff;
+  padding:20px;
+  border-radius:12px;
+  margin-bottom:20px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.15);
+}
+
+.search-bar{display:flex;gap:10px;}
+
+table{width:100%;border-collapse:collapse;margin-top:10px;}
+th,td{padding:10px;border-bottom:1px solid #ddd;text-align:center;}
+th{background:#eef2ff;}
+
+.badge{padding:4px 10px;border-radius:12px;color:#fff;font-size:12px;}
+.available{background:#16a34a;}
+.borrowed{background:#dc2626;}
+
+.edit{background:#16a34a;margin:3px 0;}
+.delete{background:#dc2626;margin:3px 0;}
+
+ul{padding-left:18px;}
+
+@media(max-width:600px){.search-bar{flex-direction:column;}}
+
+  </style>
+</head>
+<body>
+   
+<div class="overlay"><!-- WELCOME --><div class="box" id="welcomeBox">
+    <p style="font-size:20px;"><strong>Welcome to personal Book Library</strong></p> <br> 
+  <p style="font-size:14px;">Manage your personal book collection easily</p>
+  <button onclick="showLogin()">Get Started</button>
+</div><!-- LOGIN --><div class="box" id="loginBox" style="display:none;">
+  <h2>Login</h2>
+  <input id="loginUser" placeholder="Username">
+  <input id="loginPass" type="password" placeholder="Password">
+  <button onclick="login()">Login</button>
+  <span class="link" onclick="showRegister()">New user? Register</span>
+</div><!-- REGISTER --><div class="box" id="registerBox" style="display:none;">
+  <h2>Register</h2>
+  <input id="regUser" placeholder="Username">
+  <input id="regPass" type="password" placeholder="Password">
+  <button onclick="register()">Register</button>
+  <span class="link" onclick="showLogin()">Already have an account?</span>
+</div><!-- APP --><div class="app" id="app">
+  <div class="header">
+    <h1>📚 My Book Library</h1>
+    <button class="logout" onclick="logout()">Logout</button>
+  </div>  <div class="card">
+    <h3>Add / Edit Book</h3>
+    <input id="title" placeholder="Book Title">
+    <input id="author" placeholder="Author">
+    <select id="category">
+      <option>Fiction</option>
+      <option>Non-Fiction</option>
+      <option>Education</option>
+      <option>Technology</option>
+      <option>Others</option>
+    </select>
+    <button onclick="addOrUpdateBook()" id="saveBtn">Add Book</button>
+  </div>  <div class="card">
+    <h3>Search & Filter</h3>
+    <div class="search-bar">
+      <input id="search" placeholder="Search" onkeyup="renderBooks()">
+      <select id="filterCategory" onchange="renderBooks()">
+        <option value="">All Categories</option>
+        <option>Fiction</option>
+        <option>Non-Fiction</option>
+        <option>Education</option>
+        <option>Technology</option>
+        <option>Others</option>
+      </select>
+    </div><table>
+  <thead>
+    <tr>
+      <th>Title</th><th>Author</th><th>Category</th><th>Status</th><th>Actions</th>
+    </tr>
+  </thead>
+  <tbody id="bookList"></tbody>
+</table>
+
+  </div>  <div class="card">
+      <p style="font-size:14px;"><strong>Borrowing history</strong></p>
+    <h3>Borrowing History</h3>
+  <button style="margin-bottom:10px;background:#dc2626;" onclick="clearHistory()">
+    Clear History
+  </button>
+  <ul id="historyList"></ul>
+</div>
+</div>
+</div><script>
+  let users = JSON.parse(localStorage.getItem('users')) || [];
+  let currentUser = localStorage.getItem('currentUser');
+  let books = JSON.parse(localStorage.getItem('books')) || [];
+  let historyData = JSON.parse(localStorage.getItem('history')) || [];
+  let editIndex = -1;
+
+  function showLogin(){welcomeBox.style.display='none';registerBox.style.display='none';loginBox.style.display='block';}
+  function showRegister(){loginBox.style.display='none';registerBox.style.display='block';}
+
+  function register(){
+    if(!regUser.value||!regPass.value) return alert('Fill all fields');
+    if(users.find(u=>u.u===regUser.value)) return alert('User exists');
+    users.push({u:regUser.value,p:regPass.value});
+    localStorage.setItem('users',JSON.stringify(users));
+    alert('Registered successfully');
+    showLogin();
+  }
+
+  function login(){
+    const ok=users.find(u=>u.u===loginUser.value&&u.p===loginPass.value);
+    if(!ok) return alert('Invalid login');
+    localStorage.setItem('currentUser',loginUser.value);
+    startApp();
+  }
+
+  function startApp(){
+    welcomeBox.style.display='none';loginBox.style.display='none';registerBox.style.display='none';
+    app.style.display='block';
+    renderBooks();renderHistory();
+  }
+
+  function logout(){localStorage.removeItem('currentUser');location.reload();}
+
+  if(currentUser) startApp();
+
+  function save(){
+    localStorage.setItem('books',JSON.stringify(books));
+    localStorage.setItem('history',JSON.stringify(historyData));
+  }
+
+  function addOrUpdateBook(){
+    if(!title.value||!author.value) return alert('Fill all fields');
+    if(editIndex===-1){books.push({title:title.value,author:author.value,category:category.value,borrowed:false});}
+    else{books[editIndex]={...books[editIndex],title:title.value,author:author.value,category:category.value};editIndex=-1;saveBtn.innerText='Add Book';}
+    title.value=author.value='';save();renderBooks();
+  }
+
+  function editBook(i){const b=books[i];title.value=b.title;author.value=b.author;category.value=b.category;editIndex=i;saveBtn.innerText='Update Book';}
+
+  function deleteBook(i){if(confirm('Delete this book?')){books.splice(i,1);save();renderBooks();}}
+
+  function toggleBorrow(i){
+    books[i].borrowed=!books[i].borrowed;
+    historyData.push(`${books[i].title} ${books[i].borrowed?'Borrowed':'Returned'} on ${new Date().toLocaleDateString()}`);
+    save();renderBooks();renderHistory();
+  }
+
+  function renderBooks(){
+    bookList.innerHTML='';
+    const s=search.value.toLowerCase(),f=filterCategory.value;
+    books.forEach((b,i)=>{
+      if((b.title.toLowerCase().includes(s)||b.author.toLowerCase().includes(s))&&(f===''||b.category===f)){
+        bookList.innerHTML+=`<tr>
+          <td>${b.title}</td><td>${b.author}</td><td>${b.category}</td>
+          <td><span class="badge ${b.borrowed?'borrowed':'available'}">${b.borrowed?'Borrowed':'Available'}</span></td>
+          <td>
+            <button onclick="toggleBorrow(${i})">${b.borrowed?'Return':'Borrow'}</button>
+            <button class="edit" onclick="editBook(${i})">Edit</button>
+            <button class="delete" onclick="deleteBook(${i})">Delete</button>
+          </td>
+        </tr>`;
+      }
+    });
+  }
+
+  function renderHistory(){
+    historyList.innerHTML='';
+    historyData.slice(-10).reverse().forEach(h=>historyList.innerHTML+=`<li>${h}</li>`);
+  }
+  function clearHistory(){
+  if(confirm("Are you sure you want to clear borrowing history?")){
+    historyData = [];
+    localStorage.setItem('history', JSON.stringify(historyData));
+    renderHistory();
+  }
+}
+</script></body>
+</html>
